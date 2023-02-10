@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+  master:
+    container_name: mysql_master
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./config/master:/conf
+      - master_db:/var/lib/mysql
+    tty: true
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_HOME: /conf
+  slave:
+    container_name: mysql_slave
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ./config/slave:/conf
+      - slave_db:/var/lib/mysql
+    tty: true
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_HOME: /conf
+
+volumes:
+  master_db:
+  slave_db:
