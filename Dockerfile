@@ -1,3 +1,1 @@
-FROM mysql:5.7
-
-RUN yum install -y vim
+FROM mysql:8.0
