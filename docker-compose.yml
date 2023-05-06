@@ -27,6 +27,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
+  ruby:
+    working_dir: /ruby
+    image: ruby:3.1.4-buster
+    container_name: ruby
+    volumes:
+      - ./ruby/:/ruby
 
 volumes:
   master_db:
