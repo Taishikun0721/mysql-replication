@@ -1,0 +1,3 @@
+- [MySQL/Postgres におけるトランザクション分離レベルと発生するアノマリーを整理する](https://zenn.dev/mpyw/articles/rdb-transaction-isolations)
+- [MySQLのInnoDBのロック挙動調査](https://github.com/ichirin2501/doc/blob/master/innodb.md)
+- [世界の何処かで MySQL（InnoDB）の REPEATABLE READ に嵌る人を1人でも減らすために](https://techblog.kayac.com/repeatable_read.html)

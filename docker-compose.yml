@@ -2,6 +2,7 @@ version: '3.7'
 
 services:
   master:
+    platform: linux/amd64
     container_name: mysql_master
     build:
       context: .
@@ -14,6 +15,7 @@ services:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
   slave:
+    platform: linux/amd64
     container_name: mysql_slave
     build:
       context: .
@@ -25,6 +27,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
+  ruby:
+    working_dir: /ruby
+    image: ruby:3.1.4-buster
+    container_name: ruby
+    volumes:
+      - ./ruby/:/ruby
 
 volumes:
   master_db:
