@@ -34,6 +34,14 @@ AWS Auroraでは、マルチAZ構成で同期レプリケーションを実施�
 - master側で実行したバイナリログをslave側にリレーログへコピーしてそこから同期を取る。
 
 ## 手順
+
+### サーバーを起動して、コンテナの中にはいる
+
+```bash
+docker-compose up -d
+```
+サーバーを起動する
+
 ###  レプリケーション用のユーザーを作成する(master)
 
 ``` bash
@@ -43,6 +51,13 @@ grant replication slave on *.* to 'repl'@'%';
 
 `repl`というユーザーを作成して、レプリケーションを実行する権限を付与している。
 ホスト名は今回 `%`にしているが、実際はIPアドレスを指定して制限することができるので、興味がある方はやってみて下さい！
+
+### 認証方法の変更
+`mysql_native_password`の認証方式に変更する必要があるため、変更
+
+```
+ALTER USER 'yourusername'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youpassword';
+```
 
 
 ### バイナリログ情報を出力する (master)
@@ -68,7 +83,7 @@ Executed_Gtid_Set:
 ### master側のサーバーの情報を読み込む (slave)
 
 ```bash
-change master to master_host="master",master_user="repl",master_password="secret", master_log_file="d24b5effa743-bin.000003", master_log_pos=154
+change master to master_host="master",master_user="repl",master_password="secret", master_log_file="{バイナリログファイル名}", master_log_pos={バイナリログポジション}
 ```
 
  `master_log_file` に `show master status`コマンドで出てきた `File`の情報を追記する。
@@ -149,6 +164,16 @@ Master_SSL_Verify_Server_Cert: No
 
 このリストの中でerrorが出ていたら、何か設定がおかしいのでログを見ながらトラブルシューティングをする。
 特にエラーが出ていなかったらこれで、設定は完了。
+
+
+### もしエラーが出たら
+
+```
+stop slave;
+reset slave;
+start slave;
+```
+を打てばやり直せる
 
 
 ## 検証
