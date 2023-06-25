@@ -80,7 +80,7 @@ mysqlbinlog --start-position=911 --stop-position=1186 /var/lib/mysql/b4a752ae314
 mysql -u {ユーザー名} -p{パスワード} < recovery.sql
 ```
 
-ここまで実施すれば本の状態に戻せているはず。
+ここまで実施すれば元の状態に戻せているはず。
 尚、公式では`--start-datetime`などの時間を使って、バイナリログのセグメントを区切るのは非推奨で
 理由はトランザクションの境目を正確に判別できなくなるから。
 
