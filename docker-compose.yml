@@ -9,11 +9,14 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./config/master:/conf
+      - ./data:/data
       - master_db:/var/lib/mysql
     tty: true
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
+    ports:
+      - "13306:3306"
   slave:
     platform: linux/x86_64
     container_name: mysql_slave
@@ -22,11 +25,14 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./config/slave:/conf
+      - ./data:/data
       - slave_db:/var/lib/mysql
     tty: true
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
+    ports:
+      - "23306:3306"
   restore:
     platform: linux/x86_64
     container_name: mysql_restore
@@ -35,11 +41,14 @@ services:
       dockerfile: ./Dockerfile
     volumes:
       - ./config/restore:/conf
+      - ./data:/data
       - restore_db:/var/lib/mysql
     tty: true
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_HOME: /conf
+    ports:
+      - "33306:3306"
   ruby:
     working_dir: /ruby
     image: ruby:3.1.4-buster
