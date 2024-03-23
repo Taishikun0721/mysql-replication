@@ -1,13 +1,13 @@
 ## phantom read
 
-実際には`REPETABLE-READ`でも発生すると言われているが、MVCCという機構がMySQLには備わっているので、実際にこの現象が発生するのは、トランザクション分離レベルが `READ-COMMITED`の場合となる
+実際には`REPETABLE-READ`でも発生すると言われているが、[MVCC](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)という機構がMySQLには備わっているので、実際にこの現象が発生するのは、トランザクション分離レベルが `READ-COMMITED`の場合となる
 
 [トランザクション分離レベル確認方法](https://marock.tokyo/2021/07/13/mysql-%E3%83%88%E3%83%A9%E3%83%B3%E3%82%B6%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3%E5%88%86%E9%9B%A2%E3%83%AC%E3%83%99%E3%83%AB%E3%82%92%E7%A2%BA%E8%AA%8D%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95/)
 
 
 ■ トランザクション分離レベルを`READ-COMMITED`に変更
 ``` sql
-mysql> SET SESSION  TRANSACTION ISOLATION LEVEL READ COMMITTED;
+mysql> SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
 Query OK, 0 rows affected (0.01 sec)
 ```
 ■ 確認
