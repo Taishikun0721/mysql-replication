@@ -10,37 +10,18 @@ docker-compose up -d
 - 各コンテナへの入り方
 
 ``` bash
-docker-compose exec master bash
-docker-compose exec slave bash
+task exec -- master bash
+task exec -- slave bash
 ```
 
 ## 背景
 AWS Auroraでは、マルチAZ構成で同期レプリケーションを実施してくれたり、リードレプリカを作成して非同期のレプリケーションを実施して、負荷分散をしてくれている
-今回はその背景ではどんな技術が使われているか気になったので、作ってみました。
-
-
-## ディレクトリ構成
-```
-├── Dockerfile
-├── config
-│   ├── master
-│   │   └── my.cnf
-│   └── slave
-│       └── my.cnf
-└── docker-compose.yml
-```
+この仕組みはAurora特有のものでMySQLではバイナリログレプリケーションが使用されるのですが、その挙動を実験できる環境を作りました
 
 ## 概要
 - master側で実行したバイナリログをslave側にリレーログへコピーしてそこから同期を取る。
 
 ## 手順
-
-### サーバーを起動して、コンテナの中にはいる
-
-```bash
-docker-compose up -d
-```
-サーバーを起動する
 
 ###  レプリケーション用のユーザーを作成する(master)
 
@@ -50,15 +31,14 @@ grant replication slave on *.* to 'repl'@'%';
 ```
 
 `repl`というユーザーを作成して、レプリケーションを実行する権限を付与している。
-ホスト名は今回 `%`にしているが、実際はIPアドレスを指定して制限することができるので、興味がある方はやってみて下さい！
+ホスト名は今回 `%`にしているが、実際はIPアドレスを指定して制限することができる
 
 ### 認証方法の変更
-`mysql_native_password`の認証方式に変更する必要があるため、変更
+`mysql_native_password`の認証方式に変更しないとslaveで再生する時にエラーが出るため、変更
 
 ```
 ALTER USER 'yourusername'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youpassword';
 ```
-
 
 ### バイナリログ情報を出力する (master)
 ``` bash
@@ -78,9 +58,16 @@ Executed_Gtid_Set:
 
 この `File`と`Position`を後ほどslave側で指定するのでメモに取っておく。
 
-ここで、既にデータがある場合は、dumpを取ってslave側に入れるが、今回は割愛。
+ここで、既にデータがある場合は、dumpを取ってslave側に入れる必要がある。(事前にディレクトリは作成しておく)
 
-### master側のサーバーの情報を読み込む (slave)
+```bash
+mysqldump --single-transaction -u root -p sakila > /data/dump/sakila.dump
+```
+
+`--single-transaction`をつけると`BEGIN`を発行してスナップショットを取得するのでMVCCによって開始時点のスナップショットが取得されるので整合性が担保される
+もう1つはこのオプションをつけていない場合ロックを取得して整合性を保とうとするため、パフォーマンスに影響が出る
+
+### master側のサーバーの情報を設定する (slave)
 
 ```bash
 change master to master_host="master",master_user="repl",master_password="secret", master_log_file="{バイナリログファイル名}", master_log_pos={バイナリログポジション}
@@ -162,7 +149,7 @@ Master_SSL_Verify_Server_Cert: No
            Master_TLS_Version:
 ```
 
-このリストの中でerrorが出ていたら、何か設定がおかしいのでログを見ながらトラブルシューティングをする。
+このリストの中でerrorが出ていたら、設定が間違っているのでログを見ながらトラブルシューティングをする。
 特にエラーが出ていなかったらこれで、設定は完了。
 
 
@@ -170,15 +157,16 @@ Master_SSL_Verify_Server_Cert: No
 
 ```
 stop slave;
-reset slave;
+reset slave all;
+設定を変更
 start slave;
 ```
-を打てばやり直せる
 
+を実施して設定を見直す事ができる
 
 ## 検証
 
-- master側でデータベースを作成して、slave側でもできていたらOK
+- master側でデータベースを作成して、slave側でもできていたらOK(insertでもなんでもOK)
 
 ```bash (master)
 create database dev;
@@ -198,7 +186,16 @@ show databases;
 +--------------------+
 ```
 
-## 知識的なところ
+- バイナリログレプリケーションの遅延がない事をどうやったら確認できるか?
+
+```bash
+show slave status\G;
+```
+
+上記を実施して `Seconds_Behind_Master`が0だったらレプリカラグが無いので切り替え可能
+
+
+## 前提知識
 - バイナリログ
     - MySQLで行ったデータの変更情報をバイナリで出力するログの事で、master側で出力する必要がある。
 
@@ -218,3 +215,9 @@ show databases;
 
 次は2台、3台と増やして遊んでみたいなと思いました。
 
+### masterとreplicaで名前が違うDBに流したい場合
+
+```sql
+CHANGE REPLICATION FILTER REPLICATE_REWRITE_DB = ((db1, db2));
+```
+これでmasterの`db1`からreplicaの`db2`にレプリケーションが実行される
